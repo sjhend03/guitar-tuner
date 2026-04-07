@@ -1,0 +1,5 @@
+Metadata-Version: 2.4
+Name: guitar-tuner
+Version: 0.1.0
+Summary: A Fourier-based guitar tuner in Python
+Requires-Python: >=3.10
