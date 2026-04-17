@@ -2,7 +2,7 @@ import numpy as np
 import sounddevice as sd
 
 def record_audio(duration: float = 3, fs: int = 44100) -> np.ndarray:
-    """
+    """pip
     duration: how many seconds to record
     fs: sampling frequency e.g. 44100, the signal gets measured 44100 a second
     """

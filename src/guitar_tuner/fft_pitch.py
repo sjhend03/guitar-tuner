@@ -1,5 +1,8 @@
 import numpy as np
+import os
+from scipy import signal
 from scipy.signal import windows
+import matplotlib.pyplot as plt
 
 def estimate_frequency(signal: np.ndarray, fs: int) -> float:
     """
@@ -23,8 +26,36 @@ def estimate_frequency(signal: np.ndarray, fs: int) -> float:
     
     masked_freqs = freqs[mask]
     masked_magnitudes = magnitude[mask]
-
+    
     peak_idx = np.argmax(masked_magnitudes) # Find biggest magnitude e.g. the note being played
+
+    #produce time axis for plotting (seconds)
+    time = np.arange(len(signal)) / fs
+
+    #plot aplitude and time graph and save it to Plots/amplitude_time.png
+    plt.figure(figsize=(10, 4))
+    plt.plot(time, signal)
+    plt.title("Time Spectrum")
+    plt.xlabel("Time (seconds)")
+    plt.ylabel("Amplitude")
+    plt.legend(["Audio Signal"])
+
+    folder_path = "Plots"
+    if not os.path.exists(folder_path):
+        os.makedirs(folder_path)
+    plt.savefig(os.path.join(folder_path, "amplitude_time.png"))
+    plt.close()
+
+    #plot frequency and magnitude graph with peaks and save it to Plots/frequency_magnitude.png
+    plt.figure(figsize=(10, 4))
+    plt.plot(masked_freqs, masked_magnitudes)
+    plt.scatter(masked_freqs[peak_idx], masked_magnitudes[peak_idx], color='red', s=100, label='Detected Peak')
+    plt.title("Magnitude Spectrum")
+    plt.xlabel("Frequency (Hz)")
+    plt.ylabel("Magnitude")
+    plt.legend(["Magnitude Spectrum", "Detected Peak"])
+    plt.savefig(os.path.join(folder_path, "frequency_magnitude.png"))
+    plt.close()
 
     return float(masked_freqs[peak_idx])
 
