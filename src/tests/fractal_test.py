@@ -21,7 +21,7 @@ def process_data():
 
 def produce_grid(grid_points=256):
     """
-    This function produces 2*2 frequency space grid of the frequencies and magnitudes. 
+    This function produces n*n frequency space grid of the frequencies and magnitudes. 
     The grid points are determined by the grid_points parameter.
     """
     #Produce grid in frequency space
@@ -36,21 +36,46 @@ def produce_grid(grid_points=256):
 
     return R
 
-def rescale_domains():
-    """
-    This function rescales the domains of the processed data.
-    """
-    data = process_data()
 
-
+def map_domains(data):
+    """
+    This function maps the rescaled domains to the processed data.
+    Need to map freq. (1D) to (2D) grid.
+    """
+    #handle case where data is None
     if data is None:
         print("No audio data was processed.")
         return None
     
-    R = produce_grid()
-    R_scaled = (R*(len(data[0])-1))/R.max() #Scale the grid to match the frequency range of the data
-    return
+    masked_freqs, masked_magnitudes, peak_idx, time = data #unpack data
 
+    R = produce_grid(grid_points=256)
+
+    #handle case where R_scaled is None
+    if R is None:
+        print("No rescaled grid available.")
+        return None
+    
+    #normalize magnitudes to be between 0 and 1
+    norm_mask_magnitudes = masked_magnitudes / masked_magnitudes.max()
+
+    #linear scaling of R_scaled to match the range of the normalized frequencies
+    f_min = masked_freqs.min()
+    f_max = masked_freqs.max()
+
+    R_scaled = f_min + (R / R.max()) * (f_max - f_min)
+
+    #to interpolate, masked freq need to be sorted 
+    idx = np.argsort(masked_freqs)
+    masked_freqs_sorted = masked_freqs[idx]
+
+    ampl_2d = np.interp(
+        R_scaled.flatten(),
+        masked_freqs_sorted,
+        norm_mask_magnitudes
+    ).reshape(R_scaled.shape)
+    
+    return ampl_2d
 
 if __name__ == "__main__":
     print("Testing produce_grid()...")
