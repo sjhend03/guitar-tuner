@@ -1,5 +1,7 @@
+from time import time
+
 from guitar_tuner.audio import record_audio
-from guitar_tuner.fft_pitch import estimate_frequency
+from guitar_tuner.fft_pitch import (estimate_frequency, get_data)
 from guitar_tuner.notes import (
     frequency_to_note,
     
@@ -15,9 +17,16 @@ def main():
 
     signal = record_audio(duration=3, fs=FS)
 
-    freq = estimate_frequency(signal, FS)
+    data = get_data(signal, FS)
 
-    if freq <= 0:
+    if data is None:
+        print("No note played")
+        return
+
+    masked_freqs, masked_magnitudes, peak_idx, time = data
+    freq = estimate_frequency(signal, masked_freqs, masked_magnitudes, peak_idx, time)
+
+    if freq is None or freq <= 0:
         print("No note played")
         return
     
