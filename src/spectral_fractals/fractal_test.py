@@ -5,7 +5,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import os
 
-FS = 44100 # Sample frequency
+FS = 44100 #Sample frequency
 
 def process_data():
     """
@@ -26,7 +26,7 @@ def process_data():
     masked_freqs, masked_magnitudes, peak_idx, time = data
     return data
 
-def produce_grid(grid_points=256):
+def produce_grid(grid_points=128):
     """
     This function produces n*n frequency space grid of the frequencies and magnitudes. 
     The grid points are determined by the grid_points parameter.
@@ -34,7 +34,7 @@ def produce_grid(grid_points=256):
     #Produce grid in frequency space
     nx = np.fft.fftfreq(grid_points)
     ny = np.fft.fftfreq(grid_points)
-    NX, NY = np.meshgrid(nx, ny) # [-0.5,0.5)
+    NX, NY = np.meshgrid(nx, ny) #[-0.5,0.5)
 
     #Define metric in frequency space 
     R = np.sqrt(NX**2 + NY**2) #[1e-8,0.707)
@@ -57,6 +57,7 @@ def map_domains(data):
     masked_freqs, masked_magnitudes, peak_idx, time = data #unpack data
 
     R = produce_grid(grid_points=256)
+    #R = np.fft.fftshift(R) #shift zero frequency to center of spectrum
 
     #handle case where R_scaled is None
     if R is None:
@@ -84,8 +85,8 @@ def map_domains(data):
         masked_freqs_sorted,
         norm_mask_magnitudes_sorted
     ).reshape(R_scaled.shape)
-    
-    return ampl_2d
+
+    return np.fft.fftshift(ampl_2d)
 
 def visualize_domain_mapping(ampl_2d):
     """
@@ -96,45 +97,57 @@ def visualize_domain_mapping(ampl_2d):
         print("No amplitude data to visualize.")
         return
     
-    plt.imshow(ampl_2d, cmap='viridis')
+    plt.imshow(ampl_2d, cmap="viridis")
     plt.colorbar()
     plt.title("Mapped Amplitude in Frequency Space")
     plt.xlabel("Frequency (normalized)")
     plt.ylabel("Frequency (normalized)")
     
-    #save the plot to tests/Plots/domain_mapping.png
-    folder_path = "tests/Plots"
+    #save the plot to spectral_fractals/Plots/domain_mapping.png
+    folder_path = "spectral_fractals/Plots"
     if not os.path.exists(folder_path):
         os.makedirs(folder_path)
     plt.savefig(os.path.join(folder_path, "domain_mapping.png"))
+    print("Domain mapping visualization saved to spectral_fractals/Plots/domain_mapping.png")
     plt.close()
 
+def generate_fractal(ampl_2d, beta=1.5):
+    #visualize the domain mapping for same data
+    visualize_domain_mapping(ampl_2d)
 
-# def generate_fractal(ampl_2d, beta=1):
-#     R = produce_grid(ampl_2d.shape[0])
+    #shape of ampl_2d is (gridpoints, gridpoints)
+    R = produce_grid(ampl_2d.shape[0]) 
+    R_shifted = np.fft.fftshift(R)
+    R_shifted[R_shifted==0] = 1e-8 #handle division by zero
+    fractal_scaling = ampl_2d*(1/R_shifted**beta)
 
-#     # fractal scaling
-#     amplitude = ampl_2d / (R ** beta)
+    #add random phase
+    phase = np.exp(2j * np.pi * np.random.rand(ampl_2d.shape[0], ampl_2d.shape[0]))
 
-#     # random phase
-#     phase = np.exp(2j * np.pi * np.random.rand(*amplitude.shape))
+    fractal_image = fractal_scaling * phase
 
-#     # complex spectrum
-#     F = amplitude * phase
+    #inverse FFT
+    img = np.fft.ifft2(fractal_image)
+    img_abs = np.abs(img)
 
-#     # inverse FFT
-#     img = np.fft.ifft2(F).real
+    #normalize
+    img_abs_norm = (img_abs - img_abs.min()) / (img_abs.max() - img_abs.min())
 
-#     # normalize
-#     img = (img - img.min()) / (img.max() - img.min())
+    plt.imshow(img_abs_norm, cmap="viridis")
+    plt.colorbar()
+    plt.title("Audio-driven fractal")
+    
+    #save the plot to spectral_fractals/Plots/domain_mapping.png
+    folder_path = "spectral_fractals/Plots"
+    if not os.path.exists(folder_path):
+        os.makedirs(folder_path)
+    plt.savefig(os.path.join(folder_path, "fractal.png"))
+    print("Fractal visualization saved to spectral_fractals/Plots/fractal.png")
+    plt.close()
 
-#     plt.imshow(img, cmap='viridis')
-#     plt.colorbar()
-#     plt.title("Audio-driven fractal")
-#     plt.show()
-
-#     return img
+    return fractal_scaling
 
 
 if __name__ == "__main__":
-    result = visualize_domain_mapping(map_domains(process_data()))
+    #result = visualize_domain_mapping(map_domains(process_data()))
+    result2 = generate_fractal(map_domains(process_data()), beta=2)
