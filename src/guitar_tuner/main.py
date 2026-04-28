@@ -48,7 +48,7 @@ ax_fft.set_xlim(70, 400)
 ax_fractal.set_title("Live Fractal")
 ax_fractal.axis("off")
 fractal_im = ax_fractal.imshow(
-    np.zeros((128, 128)), cmap="viridis", animated=True,
+    np.zeros((128, 128)), cmap="turbo", animated=True,
     aspect="auto", vmin=0, vmax=1
 )
 
@@ -118,7 +118,7 @@ def update(frame):
             R = produce_grid(ampl_2d.shape[0])
             R_shifted = np.fft.fftshift(R)
             R_shifted[R_shifted==0] = 1e-8 # handle division by zero
-            fractal_scaling = ampl_2d * (1 / R_shifted**1.5)
+            fractal_scaling = ampl_2d * (1 / R_shifted**2.5)
             img = np.fft.ifft2(fractal_scaling)
             img_abs = np.abs(img)
             # normalize
